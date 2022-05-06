@@ -12,8 +12,8 @@ gen:
     flutter_rust_bridge_codegen {{llvm_path}} \
         --rust-input native/src/api.rs \
         --dart-output lib/bridge_generated.dart \
-        --c-output ios/Runner/bridge_generated.h
-    cp ios/Runner/bridge_generated.h macos/Runner/bridge_generated.h
+        --c-output linux/include/bridge_generated.h
+    # cp ios/Runner/bridge_generated.h macos/Runner/bridge_generated.h
     # Uncomment this line to invoke build_runner as well
     # flutter pub run build_runner build
 

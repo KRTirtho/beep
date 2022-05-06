@@ -1,3 +1,5 @@
+import 'dart:io';
+
 import 'package:flutter/material.dart';
 import 'ffi.dart';
 
@@ -54,11 +56,14 @@ class _MyHomePageState extends State<MyHomePage> {
   late Future<Platform> platform;
   late Future<bool> isRelease;
 
+  bool playerInitialized = false;
+
   @override
   void initState() {
     super.initState();
     platform = api.platform();
     isRelease = api.rustReleaseMode();
+    api.initPlayer().then((_) => setState(() => playerInitialized = true));
   }
 
   @override
@@ -95,7 +100,6 @@ class _MyHomePageState extends State<MyHomePage> {
           // horizontal).
           mainAxisAlignment: MainAxisAlignment.center,
           children: <Widget>[
-            const Text("You're running on"),
             // To render the results of a Future, a FutureBuilder is used which
             // turns a Future into an AsyncSnapshot, which can be used to
             // extract the error state, the loading state and the data if
@@ -138,9 +142,18 @@ class _MyHomePageState extends State<MyHomePage> {
                       Platform.Wasm: 'the Web',
                     }[platform] ??
                     'Unknown OS';
-                return Text('$text ($release)', style: style);
+                return Text('Platform $text ($release)', style: style);
               },
-            )
+            ),
+
+            IconButton(
+              icon: const Icon(Icons.play_arrow_rounded),
+              onPressed: playerInitialized
+                  ? () {
+                      api.load(source: "audio/malibu.mp3");
+                    }
+                  : null,
+            ),
           ],
         ),
       ),

@@ -22,3 +22,12 @@ echo "ANDROID_NDK=.." >> ~/.gradle/gradle.properties
 Then go ahead and run `flutter run`! When you're ready, refer to our documentation
 [here](https://fzyzcjy.github.io/flutter_rust_bridge/index.html)
 to learn how to write and use binding code.
+
+Extra Config:
+
+Arch Linux:
+
+- Add following in `~/.zshrc`
+  ```shell
+    export CPATH="$(clang -v 2>&1 | grep "Selected GCC installation" | rev | cut -d' ' -f1 | rev)/include"
+  ```

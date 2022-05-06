@@ -1,3 +1,11 @@
+use std::{fs::File, io::BufReader, path::Path, sync::{Mutex, Arc}, time::Duration};
+
+use lazy_static::lazy_static;
+use rodio::{self, source::SineWave, Decoder, OutputStream, Sink, Source};
+
+use crate::player::Player;
+use anyhow::Result;
+
 // This is the entry point of your Rust library.
 // When adding new code to your project, note that only items used
 // here will be transformed to their Dart equivalents.
@@ -57,3 +65,96 @@ pub fn platform() -> Platform {
 pub fn rust_release_mode() -> bool {
     cfg!(not(debug_assertions))
 }
+
+pub fn play_beep(freq: f32, duration_ms: u64, amplification: f32) {
+    let (_stream, stream_handle) = OutputStream::try_default().unwrap();
+    let sink = Sink::try_new(&stream_handle).unwrap();
+
+    let source = SineWave::new(freq)
+        .take_duration(Duration::from_millis(duration_ms))
+        .amplify(amplification);
+    sink.append(source);
+
+    // The sound plays in a separate thread. This call will block the current thread until the sink
+    // has finished playing all its queued sounds.
+    sink.sleep_until_end();
+}
+
+pub fn play_song(s_path: String) {
+    let path = Path::new(s_path.as_str());
+    if !path.exists() {
+        panic!(
+            "The audio file doesn't exists in the following path {}",
+            path.to_str().unwrap_or("")
+        )
+    }
+    // Get a output stream handle to the default physical sound device
+    let (_stream, stream_handle) = OutputStream::try_default().unwrap();
+    // Load a sound from a file, using a path relative to Cargo.toml
+    let file = BufReader::new(File::open(path).unwrap());
+    // Decode that sound file into a source
+    let source = Decoder::new(file).unwrap();
+
+    let sink = Sink::try_new(&stream_handle).unwrap();
+
+    sink.append(source);
+    // The sound plays in a separate audio thread,
+    // so we need to keep the main thread alive while it's playing.
+
+    sink.sleep_until_end();
+}
+
+lazy_static! {
+    static ref PLAYER: Arc<Mutex<Option<Player>>> = Arc::new(Mutex::new(None));
+}
+
+pub fn init_player() -> Result<()> {
+    *PLAYER.lock().unwrap() = Some(Player::new());
+    Ok(())
+}
+
+pub fn play() {
+    PLAYER.lock().unwrap().as_ref().unwrap().play();
+}
+
+pub fn pause() {
+    PLAYER.lock().unwrap().as_ref().unwrap().pause();
+}
+pub fn shuffle() {
+    PLAYER.lock().unwrap().as_mut().unwrap().shuffle();
+}
+pub fn set_volume(volume: f32) {
+    PLAYER.lock().unwrap().as_ref().unwrap().set_volume(volume);
+}
+pub fn set_speed(speed: f32) {
+    PLAYER.lock().unwrap().as_ref().unwrap().set_speed(speed);
+}
+pub fn get_volume() -> f32 {
+    PLAYER.lock().unwrap().as_ref().unwrap().get_volume()
+}
+pub fn get_speed() {
+    PLAYER.lock().unwrap().as_ref().unwrap().get_speed();
+}
+pub fn load(source: String) {
+    if let Err(err) = PLAYER.lock().unwrap().as_mut().unwrap().load(source) {
+        eprintln!("[Loading Failed] Reason: {}", err.to_string());
+    }
+}
+// pub fn load_playlist() {
+//     PLAYER.lock().unwrap().as_ref().unwrap().load_playlist();
+// }
+// pub fn seek() {
+//     PLAYER.lock().unwrap().as_ref().unwrap().seek();
+// }
+// pub fn skip() {
+//     PLAYER.lock().unwrap().as_ref().unwrap().skip();
+// }
+// pub fn append_playlist() {
+//     PLAYER.lock().unwrap().as_ref().unwrap().append_playlist();
+// }
+// pub fn clear_playlist() {
+//     PLAYER.lock().unwrap().as_ref().unwrap().clear_playlist();
+// }
+// pub fn out_playlist() {
+//     PLAYER.lock().unwrap().as_ref().unwrap().out_playlist();
+// }
