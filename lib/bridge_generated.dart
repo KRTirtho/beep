@@ -12,46 +12,31 @@ import 'package:flutter_rust_bridge/flutter_rust_bridge.dart';
 import 'dart:ffi' as ffi;
 
 abstract class Native {
-  Future<Platform> platform({dynamic hint});
-
-  Future<bool> rustReleaseMode({dynamic hint});
-
-  Future<void> playBeep(
-      {required double freq,
-      required int durationMs,
-      required double amplification,
-      dynamic hint});
-
-  Future<void> playSong({required String sPath, dynamic hint});
-
   Future<void> initPlayer({dynamic hint});
 
-  Future<void> play({dynamic hint});
+  Future<void> play({required String path, dynamic hint});
 
   Future<void> pause({dynamic hint});
 
   Future<void> shuffle({dynamic hint});
 
-  Future<void> setVolume({required double volume, dynamic hint});
+  Future<void> setVolume({required int volume, dynamic hint});
 
   Future<void> setSpeed({required double speed, dynamic hint});
 
-  Future<double> getVolume({dynamic hint});
+  Future<int> getVolume({dynamic hint});
 
-  Future<void> getSpeed({dynamic hint});
+  Future<double> getSpeed({dynamic hint});
 
-  Future<void> load({required String source, dynamic hint});
-}
+  Future<void> togglePlayback({dynamic hint});
 
-enum Platform {
-  Unknown,
-  Android,
-  Ios,
-  Windows,
-  Unix,
-  MacIntel,
-  MacApple,
-  Wasm,
+  Future<void> resume({dynamic hint});
+
+  Future<double> duration({dynamic hint});
+
+  Future<int> elapsed({dynamic hint});
+
+  Stream<Float64List> progressStream({dynamic hint});
 }
 
 class NativeImpl extends FlutterRustBridgeBase<NativeWire> implements Native {
@@ -59,60 +44,6 @@ class NativeImpl extends FlutterRustBridgeBase<NativeWire> implements Native {
       NativeImpl.raw(NativeWire(dylib));
 
   NativeImpl.raw(NativeWire inner) : super(inner);
-
-  Future<Platform> platform({dynamic hint}) =>
-      executeNormal(FlutterRustBridgeTask(
-        callFfi: (port_) => inner.wire_platform(port_),
-        parseSuccessData: _wire2api_platform,
-        constMeta: const FlutterRustBridgeTaskConstMeta(
-          debugName: "platform",
-          argNames: [],
-        ),
-        argValues: [],
-        hint: hint,
-      ));
-
-  Future<bool> rustReleaseMode({dynamic hint}) =>
-      executeNormal(FlutterRustBridgeTask(
-        callFfi: (port_) => inner.wire_rust_release_mode(port_),
-        parseSuccessData: _wire2api_bool,
-        constMeta: const FlutterRustBridgeTaskConstMeta(
-          debugName: "rust_release_mode",
-          argNames: [],
-        ),
-        argValues: [],
-        hint: hint,
-      ));
-
-  Future<void> playBeep(
-          {required double freq,
-          required int durationMs,
-          required double amplification,
-          dynamic hint}) =>
-      executeNormal(FlutterRustBridgeTask(
-        callFfi: (port_) => inner.wire_play_beep(port_, _api2wire_f32(freq),
-            _api2wire_u64(durationMs), _api2wire_f32(amplification)),
-        parseSuccessData: _wire2api_unit,
-        constMeta: const FlutterRustBridgeTaskConstMeta(
-          debugName: "play_beep",
-          argNames: ["freq", "durationMs", "amplification"],
-        ),
-        argValues: [freq, durationMs, amplification],
-        hint: hint,
-      ));
-
-  Future<void> playSong({required String sPath, dynamic hint}) =>
-      executeNormal(FlutterRustBridgeTask(
-        callFfi: (port_) =>
-            inner.wire_play_song(port_, _api2wire_String(sPath)),
-        parseSuccessData: _wire2api_unit,
-        constMeta: const FlutterRustBridgeTaskConstMeta(
-          debugName: "play_song",
-          argNames: ["sPath"],
-        ),
-        argValues: [sPath],
-        hint: hint,
-      ));
 
   Future<void> initPlayer({dynamic hint}) =>
       executeNormal(FlutterRustBridgeTask(
@@ -126,14 +57,15 @@ class NativeImpl extends FlutterRustBridgeBase<NativeWire> implements Native {
         hint: hint,
       ));
 
-  Future<void> play({dynamic hint}) => executeNormal(FlutterRustBridgeTask(
-        callFfi: (port_) => inner.wire_play(port_),
+  Future<void> play({required String path, dynamic hint}) =>
+      executeNormal(FlutterRustBridgeTask(
+        callFfi: (port_) => inner.wire_play(port_, _api2wire_String(path)),
         parseSuccessData: _wire2api_unit,
         constMeta: const FlutterRustBridgeTaskConstMeta(
           debugName: "play",
-          argNames: [],
+          argNames: ["path"],
         ),
-        argValues: [],
+        argValues: [path],
         hint: hint,
       ));
 
@@ -159,9 +91,9 @@ class NativeImpl extends FlutterRustBridgeBase<NativeWire> implements Native {
         hint: hint,
       ));
 
-  Future<void> setVolume({required double volume, dynamic hint}) =>
+  Future<void> setVolume({required int volume, dynamic hint}) =>
       executeNormal(FlutterRustBridgeTask(
-        callFfi: (port_) => inner.wire_set_volume(port_, _api2wire_f32(volume)),
+        callFfi: (port_) => inner.wire_set_volume(port_, _api2wire_i32(volume)),
         parseSuccessData: _wire2api_unit,
         constMeta: const FlutterRustBridgeTaskConstMeta(
           debugName: "set_volume",
@@ -183,10 +115,9 @@ class NativeImpl extends FlutterRustBridgeBase<NativeWire> implements Native {
         hint: hint,
       ));
 
-  Future<double> getVolume({dynamic hint}) =>
-      executeNormal(FlutterRustBridgeTask(
+  Future<int> getVolume({dynamic hint}) => executeNormal(FlutterRustBridgeTask(
         callFfi: (port_) => inner.wire_get_volume(port_),
-        parseSuccessData: _wire2api_f32,
+        parseSuccessData: _wire2api_i32,
         constMeta: const FlutterRustBridgeTaskConstMeta(
           debugName: "get_volume",
           argNames: [],
@@ -195,9 +126,10 @@ class NativeImpl extends FlutterRustBridgeBase<NativeWire> implements Native {
         hint: hint,
       ));
 
-  Future<void> getSpeed({dynamic hint}) => executeNormal(FlutterRustBridgeTask(
+  Future<double> getSpeed({dynamic hint}) =>
+      executeNormal(FlutterRustBridgeTask(
         callFfi: (port_) => inner.wire_get_speed(port_),
-        parseSuccessData: _wire2api_unit,
+        parseSuccessData: _wire2api_f32,
         constMeta: const FlutterRustBridgeTaskConstMeta(
           debugName: "get_speed",
           argNames: [],
@@ -206,15 +138,61 @@ class NativeImpl extends FlutterRustBridgeBase<NativeWire> implements Native {
         hint: hint,
       ));
 
-  Future<void> load({required String source, dynamic hint}) =>
+  Future<void> togglePlayback({dynamic hint}) =>
       executeNormal(FlutterRustBridgeTask(
-        callFfi: (port_) => inner.wire_load(port_, _api2wire_String(source)),
+        callFfi: (port_) => inner.wire_toggle_playback(port_),
         parseSuccessData: _wire2api_unit,
         constMeta: const FlutterRustBridgeTaskConstMeta(
-          debugName: "load",
-          argNames: ["source"],
+          debugName: "toggle_playback",
+          argNames: [],
         ),
-        argValues: [source],
+        argValues: [],
+        hint: hint,
+      ));
+
+  Future<void> resume({dynamic hint}) => executeNormal(FlutterRustBridgeTask(
+        callFfi: (port_) => inner.wire_resume(port_),
+        parseSuccessData: _wire2api_unit,
+        constMeta: const FlutterRustBridgeTaskConstMeta(
+          debugName: "resume",
+          argNames: [],
+        ),
+        argValues: [],
+        hint: hint,
+      ));
+
+  Future<double> duration({dynamic hint}) =>
+      executeNormal(FlutterRustBridgeTask(
+        callFfi: (port_) => inner.wire_duration(port_),
+        parseSuccessData: _wire2api_f64,
+        constMeta: const FlutterRustBridgeTaskConstMeta(
+          debugName: "duration",
+          argNames: [],
+        ),
+        argValues: [],
+        hint: hint,
+      ));
+
+  Future<int> elapsed({dynamic hint}) => executeNormal(FlutterRustBridgeTask(
+        callFfi: (port_) => inner.wire_elapsed(port_),
+        parseSuccessData: _wire2api_u64,
+        constMeta: const FlutterRustBridgeTaskConstMeta(
+          debugName: "elapsed",
+          argNames: [],
+        ),
+        argValues: [],
+        hint: hint,
+      ));
+
+  Stream<Float64List> progressStream({dynamic hint}) =>
+      executeStream(FlutterRustBridgeTask(
+        callFfi: (port_) => inner.wire_progress_stream(port_),
+        parseSuccessData: _wire2api_float_64_list,
+        constMeta: const FlutterRustBridgeTaskConstMeta(
+          debugName: "progress_stream",
+          argNames: [],
+        ),
+        argValues: [],
         hint: hint,
       ));
 
@@ -227,7 +205,7 @@ class NativeImpl extends FlutterRustBridgeBase<NativeWire> implements Native {
     return raw;
   }
 
-  int _api2wire_u64(int raw) {
+  int _api2wire_i32(int raw) {
     return raw;
   }
 
@@ -246,16 +224,24 @@ class NativeImpl extends FlutterRustBridgeBase<NativeWire> implements Native {
 }
 
 // Section: wire2api
-bool _wire2api_bool(dynamic raw) {
-  return raw as bool;
-}
-
 double _wire2api_f32(dynamic raw) {
   return raw as double;
 }
 
-Platform _wire2api_platform(dynamic raw) {
-  return Platform.values[raw];
+double _wire2api_f64(dynamic raw) {
+  return raw as double;
+}
+
+Float64List _wire2api_float_64_list(dynamic raw) {
+  return raw as Float64List;
+}
+
+int _wire2api_i32(dynamic raw) {
+  return raw as int;
+}
+
+int _wire2api_u64(dynamic raw) {
+  return raw as int;
 }
 
 void _wire2api_unit(dynamic raw) {
@@ -284,72 +270,6 @@ class NativeWire implements FlutterRustBridgeWireBase {
           lookup)
       : _lookup = lookup;
 
-  void wire_platform(
-    int port_,
-  ) {
-    return _wire_platform(
-      port_,
-    );
-  }
-
-  late final _wire_platformPtr =
-      _lookup<ffi.NativeFunction<ffi.Void Function(ffi.Int64)>>(
-          'wire_platform');
-  late final _wire_platform =
-      _wire_platformPtr.asFunction<void Function(int)>();
-
-  void wire_rust_release_mode(
-    int port_,
-  ) {
-    return _wire_rust_release_mode(
-      port_,
-    );
-  }
-
-  late final _wire_rust_release_modePtr =
-      _lookup<ffi.NativeFunction<ffi.Void Function(ffi.Int64)>>(
-          'wire_rust_release_mode');
-  late final _wire_rust_release_mode =
-      _wire_rust_release_modePtr.asFunction<void Function(int)>();
-
-  void wire_play_beep(
-    int port_,
-    double freq,
-    int duration_ms,
-    double amplification,
-  ) {
-    return _wire_play_beep(
-      port_,
-      freq,
-      duration_ms,
-      amplification,
-    );
-  }
-
-  late final _wire_play_beepPtr = _lookup<
-      ffi.NativeFunction<
-          ffi.Void Function(
-              ffi.Int64, ffi.Float, ffi.Uint64, ffi.Float)>>('wire_play_beep');
-  late final _wire_play_beep =
-      _wire_play_beepPtr.asFunction<void Function(int, double, int, double)>();
-
-  void wire_play_song(
-    int port_,
-    ffi.Pointer<wire_uint_8_list> s_path,
-  ) {
-    return _wire_play_song(
-      port_,
-      s_path,
-    );
-  }
-
-  late final _wire_play_songPtr = _lookup<
-      ffi.NativeFunction<
-          ffi.Void Function(
-              ffi.Int64, ffi.Pointer<wire_uint_8_list>)>>('wire_play_song');
-  late final _wire_play_song = _wire_play_songPtr
-      .asFunction<void Function(int, ffi.Pointer<wire_uint_8_list>)>();
-
   void wire_init_player(
     int port_,
   ) {
@@ -366,15 +286,20 @@ class NativeWire implements FlutterRustBridgeWireBase {
 
   void wire_play(
     int port_,
+    ffi.Pointer<wire_uint_8_list> path,
   ) {
     return _wire_play(
       port_,
+      path,
     );
   }
 
-  late final _wire_playPtr =
-      _lookup<ffi.NativeFunction<ffi.Void Function(ffi.Int64)>>('wire_play');
-  late final _wire_play = _wire_playPtr.asFunction<void Function(int)>();
+  late final _wire_playPtr = _lookup<
+      ffi.NativeFunction<
+          ffi.Void Function(
+              ffi.Int64, ffi.Pointer<wire_uint_8_list>)>>('wire_play');
+  late final _wire_play = _wire_playPtr
+      .asFunction<void Function(int, ffi.Pointer<wire_uint_8_list>)>();
 
   void wire_pause(
     int port_,
@@ -402,7 +327,7 @@ class NativeWire implements FlutterRustBridgeWireBase {
 
   void wire_set_volume(
     int port_,
-    double volume,
+    int volume,
   ) {
     return _wire_set_volume(
       port_,
@@ -411,10 +336,10 @@ class NativeWire implements FlutterRustBridgeWireBase {
   }
 
   late final _wire_set_volumePtr =
-      _lookup<ffi.NativeFunction<ffi.Void Function(ffi.Int64, ffi.Float)>>(
+      _lookup<ffi.NativeFunction<ffi.Void Function(ffi.Int64, ffi.Int32)>>(
           'wire_set_volume');
   late final _wire_set_volume =
-      _wire_set_volumePtr.asFunction<void Function(int, double)>();
+      _wire_set_volumePtr.asFunction<void Function(int, int)>();
 
   void wire_set_speed(
     int port_,
@@ -460,22 +385,71 @@ class NativeWire implements FlutterRustBridgeWireBase {
   late final _wire_get_speed =
       _wire_get_speedPtr.asFunction<void Function(int)>();
 
-  void wire_load(
+  void wire_toggle_playback(
     int port_,
-    ffi.Pointer<wire_uint_8_list> source,
   ) {
-    return _wire_load(
+    return _wire_toggle_playback(
       port_,
-      source,
     );
   }
 
-  late final _wire_loadPtr = _lookup<
-      ffi.NativeFunction<
-          ffi.Void Function(
-              ffi.Int64, ffi.Pointer<wire_uint_8_list>)>>('wire_load');
-  late final _wire_load = _wire_loadPtr
-      .asFunction<void Function(int, ffi.Pointer<wire_uint_8_list>)>();
+  late final _wire_toggle_playbackPtr =
+      _lookup<ffi.NativeFunction<ffi.Void Function(ffi.Int64)>>(
+          'wire_toggle_playback');
+  late final _wire_toggle_playback =
+      _wire_toggle_playbackPtr.asFunction<void Function(int)>();
+
+  void wire_resume(
+    int port_,
+  ) {
+    return _wire_resume(
+      port_,
+    );
+  }
+
+  late final _wire_resumePtr =
+      _lookup<ffi.NativeFunction<ffi.Void Function(ffi.Int64)>>('wire_resume');
+  late final _wire_resume = _wire_resumePtr.asFunction<void Function(int)>();
+
+  void wire_duration(
+    int port_,
+  ) {
+    return _wire_duration(
+      port_,
+    );
+  }
+
+  late final _wire_durationPtr =
+      _lookup<ffi.NativeFunction<ffi.Void Function(ffi.Int64)>>(
+          'wire_duration');
+  late final _wire_duration =
+      _wire_durationPtr.asFunction<void Function(int)>();
+
+  void wire_elapsed(
+    int port_,
+  ) {
+    return _wire_elapsed(
+      port_,
+    );
+  }
+
+  late final _wire_elapsedPtr =
+      _lookup<ffi.NativeFunction<ffi.Void Function(ffi.Int64)>>('wire_elapsed');
+  late final _wire_elapsed = _wire_elapsedPtr.asFunction<void Function(int)>();
+
+  void wire_progress_stream(
+    int port_,
+  ) {
+    return _wire_progress_stream(
+      port_,
+    );
+  }
+
+  late final _wire_progress_streamPtr =
+      _lookup<ffi.NativeFunction<ffi.Void Function(ffi.Int64)>>(
+          'wire_progress_stream');
+  late final _wire_progress_stream =
+      _wire_progress_streamPtr.asFunction<void Function(int)>();
 
   ffi.Pointer<wire_uint_8_list> new_uint_8_list(
     int len,

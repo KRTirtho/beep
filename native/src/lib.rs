@@ -1,16 +1,26 @@
 mod api;
 mod bridge_generated;
-mod error;
 mod player;
-mod utils;
 
 #[cfg(test)]
 mod tests {
-    use crate::api::{init_player, load};
+
+    use std::{thread, time::Duration};
+
+    use crate::api::{duration, init_player, pause, play, resume, elapsed};
 
     #[test]
     fn audio_plays() {
         init_player();
-        load(String::from("audio/malibu.mp3"));
+        play(String::from("/home/krtirtho/dev/beep/audio/malibu.mp3"));
+        println!("total duration: {}", duration());
+        thread::sleep(Duration::from_secs(5));
+        pause();
+        thread::sleep(Duration::from_secs(5));
+        resume();
+
+        loop {
+          println!("Progress: {}", elapsed())
+        }
     }
 }

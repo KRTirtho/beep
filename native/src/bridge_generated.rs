@@ -18,62 +18,6 @@ use flutter_rust_bridge::*;
 // Section: wire functions
 
 #[no_mangle]
-pub extern "C" fn wire_platform(port_: i64) {
-    FLUTTER_RUST_BRIDGE_HANDLER.wrap(
-        WrapInfo {
-            debug_name: "platform",
-            port: Some(port_),
-            mode: FfiCallMode::Normal,
-        },
-        move || move |task_callback| Ok(platform()),
-    )
-}
-
-#[no_mangle]
-pub extern "C" fn wire_rust_release_mode(port_: i64) {
-    FLUTTER_RUST_BRIDGE_HANDLER.wrap(
-        WrapInfo {
-            debug_name: "rust_release_mode",
-            port: Some(port_),
-            mode: FfiCallMode::Normal,
-        },
-        move || move |task_callback| Ok(rust_release_mode()),
-    )
-}
-
-#[no_mangle]
-pub extern "C" fn wire_play_beep(port_: i64, freq: f32, duration_ms: u64, amplification: f32) {
-    FLUTTER_RUST_BRIDGE_HANDLER.wrap(
-        WrapInfo {
-            debug_name: "play_beep",
-            port: Some(port_),
-            mode: FfiCallMode::Normal,
-        },
-        move || {
-            let api_freq = freq.wire2api();
-            let api_duration_ms = duration_ms.wire2api();
-            let api_amplification = amplification.wire2api();
-            move |task_callback| Ok(play_beep(api_freq, api_duration_ms, api_amplification))
-        },
-    )
-}
-
-#[no_mangle]
-pub extern "C" fn wire_play_song(port_: i64, s_path: *mut wire_uint_8_list) {
-    FLUTTER_RUST_BRIDGE_HANDLER.wrap(
-        WrapInfo {
-            debug_name: "play_song",
-            port: Some(port_),
-            mode: FfiCallMode::Normal,
-        },
-        move || {
-            let api_s_path = s_path.wire2api();
-            move |task_callback| Ok(play_song(api_s_path))
-        },
-    )
-}
-
-#[no_mangle]
 pub extern "C" fn wire_init_player(port_: i64) {
     FLUTTER_RUST_BRIDGE_HANDLER.wrap(
         WrapInfo {
@@ -86,14 +30,17 @@ pub extern "C" fn wire_init_player(port_: i64) {
 }
 
 #[no_mangle]
-pub extern "C" fn wire_play(port_: i64) {
+pub extern "C" fn wire_play(port_: i64, path: *mut wire_uint_8_list) {
     FLUTTER_RUST_BRIDGE_HANDLER.wrap(
         WrapInfo {
             debug_name: "play",
             port: Some(port_),
             mode: FfiCallMode::Normal,
         },
-        move || move |task_callback| Ok(play()),
+        move || {
+            let api_path = path.wire2api();
+            move |task_callback| Ok(play(api_path))
+        },
     )
 }
 
@@ -122,7 +69,7 @@ pub extern "C" fn wire_shuffle(port_: i64) {
 }
 
 #[no_mangle]
-pub extern "C" fn wire_set_volume(port_: i64, volume: f32) {
+pub extern "C" fn wire_set_volume(port_: i64, volume: i32) {
     FLUTTER_RUST_BRIDGE_HANDLER.wrap(
         WrapInfo {
             debug_name: "set_volume",
@@ -176,17 +123,62 @@ pub extern "C" fn wire_get_speed(port_: i64) {
 }
 
 #[no_mangle]
-pub extern "C" fn wire_load(port_: i64, source: *mut wire_uint_8_list) {
+pub extern "C" fn wire_toggle_playback(port_: i64) {
     FLUTTER_RUST_BRIDGE_HANDLER.wrap(
         WrapInfo {
-            debug_name: "load",
+            debug_name: "toggle_playback",
             port: Some(port_),
             mode: FfiCallMode::Normal,
         },
-        move || {
-            let api_source = source.wire2api();
-            move |task_callback| Ok(load(api_source))
+        move || move |task_callback| Ok(toggle_playback()),
+    )
+}
+
+#[no_mangle]
+pub extern "C" fn wire_resume(port_: i64) {
+    FLUTTER_RUST_BRIDGE_HANDLER.wrap(
+        WrapInfo {
+            debug_name: "resume",
+            port: Some(port_),
+            mode: FfiCallMode::Normal,
         },
+        move || move |task_callback| Ok(resume()),
+    )
+}
+
+#[no_mangle]
+pub extern "C" fn wire_duration(port_: i64) {
+    FLUTTER_RUST_BRIDGE_HANDLER.wrap(
+        WrapInfo {
+            debug_name: "duration",
+            port: Some(port_),
+            mode: FfiCallMode::Normal,
+        },
+        move || move |task_callback| Ok(duration()),
+    )
+}
+
+#[no_mangle]
+pub extern "C" fn wire_elapsed(port_: i64) {
+    FLUTTER_RUST_BRIDGE_HANDLER.wrap(
+        WrapInfo {
+            debug_name: "elapsed",
+            port: Some(port_),
+            mode: FfiCallMode::Normal,
+        },
+        move || move |task_callback| Ok(elapsed()),
+    )
+}
+
+#[no_mangle]
+pub extern "C" fn wire_progress_stream(port_: i64) {
+    FLUTTER_RUST_BRIDGE_HANDLER.wrap(
+        WrapInfo {
+            debug_name: "progress_stream",
+            port: Some(port_),
+            mode: FfiCallMode::Stream,
+        },
+        move || move |task_callback| progress_stream(task_callback.stream_sink()),
     )
 }
 
@@ -246,8 +238,8 @@ impl Wire2Api<f32> for f32 {
     }
 }
 
-impl Wire2Api<u64> for u64 {
-    fn wire2api(self) -> u64 {
+impl Wire2Api<i32> for i32 {
+    fn wire2api(self) -> i32 {
         self
     }
 }
@@ -280,22 +272,6 @@ impl<T> NewWithNullPtr for *mut T {
 }
 
 // Section: impl IntoDart
-
-impl support::IntoDart for Platform {
-    fn into_dart(self) -> support::DartCObject {
-        match self {
-            Self::Unknown => 0,
-            Self::Android => 1,
-            Self::Ios => 2,
-            Self::Windows => 3,
-            Self::Unix => 4,
-            Self::MacIntel => 5,
-            Self::MacApple => 6,
-            Self::Wasm => 7,
-        }
-        .into_dart()
-    }
-}
 
 // Section: executor
 

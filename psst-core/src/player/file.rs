@@ -188,16 +188,15 @@ impl StreamedFile {
         let mut download_range = |offset, length| -> Result<(), Error> {
             let thread_name = format!(
                 "cdn-{}-{}..{}",
-                self.url.file_id.to_base16(),
+                self.url.as_str(),
                 offset,
                 offset + length
             );
             // TODO: We spawn threads here without any accounting.  Seems wrong.
             thread::Builder::new().name(thread_name).spawn({
-                let url = self.url.path().clone();
+                let url = String::from(self.url.as_str());
                 let mut writer = self.storage.writer()?;
                 let file_path = self.storage.path().to_path_buf();
-                let file_id = self.url.file_id;
                 move || {
                     if let Err(err) = load_range(&mut writer, &url, offset, length) {
                         log::error!("failed to download: {}", err);
